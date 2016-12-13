@@ -1,0 +1,359 @@
+I executed below SQL code on Hive Query Editor(HUE) or CLI to perform analysis based on query response time.
+Tablename with _P refers Partitioned table and _NOP refers Non Partitioned table.
+
+1) First, we created a dummy table i.e. Non Partitioned and Partitioned table as follows:
+We did the analysis of query response time on 3 different data sizes table ( Small(360MB), Medium(750MB) and Big(1.2GB))
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' --> Source TextFile contains the columns that are seperated bby Tab.
+LINES TERMINATED BY '\n' --> Source TextFile contains Rows that are terminated by new line.
+Stored as textfile --> In Metastore/Datablocks, the table will be stored in Textfile storage format (Row by Row storage), there are many other storage formats like ORC(Columnar Storage), RC etc.
+
+Create table SMALL_P
+(
+index smallint,
+month bigint,
+dayofmonth tinyint,
+dayofweek tinyint,
+deptime smallint,
+crsdeptime smallint,
+arrtime smallint,
+crsarrtime smallint,
+uniquecarrier string,
+dest string,
+distance smallint,
+diverted bigint,
+cancelled bigint,
+carrierdelay bigint,
+weatherdelay bigint,
+nasdelay tinyint,
+securitydelay bigint,
+lateaircraftdelay tinyint,
+arrdelay tinyint,
+depdelay tinyint,
+arrdelay_cat string,
+depdelay_cat string,
+dest_type string
+)
+PARTITIONED BY(origin string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' Stored as textfile; 
+
+
+Create table SMALL_NOP
+(
+index smallint,
+month bigint,
+dayofmonth tinyint,
+dayofweek tinyint,
+deptime smallint,
+crsdeptime smallint,
+arrtime smallint,
+crsarrtime smallint,
+uniquecarrier string,
+origin string,
+dest string,
+distance smallint,
+diverted bigint,
+cancelled bigint,
+carrierdelay bigint,
+weatherdelay bigint,
+nasdelay tinyint,
+securitydelay bigint,
+lateaircraftdelay tinyint,
+arrdelay tinyint,
+depdelay tinyint,
+arrdelay_cat string,
+depdelay_cat string,
+dest_type string
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' Stored as textfile;
+
+
+Create table MEDIUM_P
+(
+index smallint,
+month bigint,
+dayofmonth tinyint,
+dayofweek tinyint,
+deptime smallint,
+crsdeptime smallint,
+arrtime smallint,
+crsarrtime smallint,
+uniquecarrier string,
+dest string,
+distance smallint,
+diverted bigint,
+cancelled bigint,
+carrierdelay bigint,
+weatherdelay bigint,
+nasdelay tinyint,
+securitydelay bigint,
+lateaircraftdelay tinyint,
+arrdelay tinyint,
+depdelay tinyint,
+arrdelay_cat string,
+depdelay_cat string,
+dest_type string
+)
+PARTITIONED BY(origin string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' Stored as textfile; 
+
+
+Create table MEDIUM_NOP
+(
+index smallint,
+month bigint,
+dayofmonth tinyint,
+dayofweek tinyint,
+deptime smallint,
+crsdeptime smallint,
+arrtime smallint,
+crsarrtime smallint,
+uniquecarrier string,
+origin string,
+dest string,
+distance smallint,
+diverted bigint,
+cancelled bigint,
+carrierdelay bigint,
+weatherdelay bigint,
+nasdelay tinyint,
+securitydelay bigint,
+lateaircraftdelay tinyint,
+arrdelay tinyint,
+depdelay tinyint,
+arrdelay_cat string,
+depdelay_cat string,
+dest_type string
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' Stored as textfile; 
+
+
+Create table BIG_P
+(
+index smallint,
+month bigint,
+dayofmonth tinyint,
+dayofweek tinyint,
+deptime smallint,
+crsdeptime smallint,
+arrtime smallint,
+crsarrtime smallint,
+uniquecarrier string,
+dest string,
+distance smallint,
+diverted bigint,
+cancelled bigint,
+carrierdelay bigint,
+weatherdelay bigint,
+nasdelay tinyint,
+securitydelay bigint,
+lateaircraftdelay tinyint,
+arrdelay tinyint,
+depdelay tinyint,
+arrdelay_cat string,
+depdelay_cat string,
+dest_type string
+)
+PARTITIONED BY(origin string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' Stored as textfile; 
+
+
+Create table BIG_NOP
+(
+index smallint,
+month bigint,
+dayofmonth tinyint,
+dayofweek tinyint,
+deptime smallint,
+crsdeptime smallint,
+arrtime smallint,
+crsarrtime smallint,
+uniquecarrier string,
+origin string,
+dest string,
+distance smallint,
+diverted bigint,
+cancelled bigint,
+carrierdelay bigint,
+weatherdelay bigint,
+nasdelay tinyint,
+securitydelay bigint,
+lateaircraftdelay tinyint,
+arrdelay tinyint,
+depdelay tinyint,
+arrdelay_cat string,
+depdelay_cat string,
+dest_type string
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' Stored as textfile; 
+
+
+2) Once dummy table DDL is created, we need to populate it with Source TextFile or CSV etc.
+Loading Data into Non-PARTITIONED Table
+
+a) Bring the downloaded textfile data from our local filesystem to hadoop's filesystem i.e. HDFS:
+hdfs dfs -put Downloads/small.txt /user/cloudera
+hdfs dfs -ls /user/cloudera (Check whether txt file exists in HDFS or not)
+
+b) Loading Textfile's record into Hive's NON-Partitoned tables:
+hive> LOAD DATA INPATH '/user/cloudera/small.txt' INTO TABLE SMALL_NOP;
+hive> LOAD DATA INPATH '/user/cloudera/medium.txt' INTO TABLE MEDIUM_NOP;
+hive> LOAD DATA INPATH '/user/cloudera/big.txt' INTO TABLE BIG_NOP;
+
+c) Now, Loading Data into PARTITIONED Table from Non-Partitoned table, using Dynamic Partitioning technique:
+
+--------------------------------------------- Creating 3 Partition for Small Table -----------------------------------------------------------
+
+insert overwrite table SMALL_P PARTITION (origin="ATL")
+select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from SMALL_NOP where origin="ATL"
+
+insert overwrite table SMALL_P PARTITION (origin="LAX")
+select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from SMALL_NOP where origin="LAX"
+
+insert overwrite table SMALL_P PARTITION (origin="ORD")
+select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from SMALL_NOP where origin="ORD"
+
+--------------------------------------------- Creating 3 Partition for MEDIUM Table -----------------------------------------------------------
+
+insert overwrite table MEDIUM_P PARTITION (origin="ATL")
+select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from MEDIUM_NOP where origin="ATL"
+
+insert overwrite table MEDIUM_P PARTITION (origin="LAX")
+Select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from MEDIUM_NOP where origin="LAX"
+
+insert overwrite table MEDIUM_P PARTITION (origin="ORD")
+select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from MEDIUM_NOP where origin="ORD"
+
+--------------------------------------------- Creating 3 Partition for BIG Table -----------------------------------------------------------
+
+insert overwrite table BIG_P PARTITION (origin="ATL")
+Select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from BIG_NOP where origin="ATL"
+
+insert overwrite table BIG_P PARTITION (origin="LAX")
+Select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from BIG_NOP where origin="LAX"
+
+insert overwrite table BIG_P PARTITION (origin="ORD")
+Select index,month,dayofmonth,dayofweek,deptime,crsdeptime,arrtime,crsarrtime,uniquecarrier,dest,distance,diverted,cancelled,carrierdelay,weatherdelay,nasdelay,
+securitydelay,lateaircraftdelay,arrdelay,depdelay,arrdelay_cat,depdelay_cat,dest_type from BIG_NOP where origin="ORD"
+
+
+3) List of Duplicate row, this was most time consuming query on each box i.e. Hive, Impala and Spark-SQL
+
+Select count(*),index,
+month,
+dayofmonth,
+dayofweek,
+deptime,
+crsdeptime,
+arrtime,
+crsarrtime,
+uniquecarrier,
+origin,
+dest,
+distance,
+diverted,
+cancelled,
+carrierdelay,
+weatherdelay,
+nasdelay,
+securitydelay,
+lateaircraftdelay,
+arrdelay,
+depdelay,
+arrdelay_cat,
+depdelay_cat,
+dest_type from big_nop group by 
+index,
+month,
+dayofmonth,
+dayofweek,
+deptime,
+crsdeptime,
+arrtime,
+crsarrtime,
+uniquecarrier,
+origin,
+dest,
+distance,
+diverted,
+cancelled,
+carrierdelay,
+weatherdelay,
+nasdelay,
+securitydelay,
+lateaircraftdelay,
+arrdelay,
+depdelay,
+arrdelay_cat,
+depdelay_cat,
+dest_type having count(*)>1
+
+4) Aggregate function:
+Select count(*) from small_nop;
+
+
+5) Window Function:
+Select *,Rank() over (order by distance desc) from big_nop
+
+6) Joining Scenarios:
+
+a) Join between 2 non-partitioned tables:
+Select p.index,p.dest,p.origin from big_nop n join test p
+on n.index=p.index
+
+
+b) Join between partitioned and non-partitioned tables with Joining condition on non-partition column:
+Select p.index,p.dest,p.origin from big_nop n join big_p p
+on n.index=p.index
+
+7) Retrival before partition:
+Select * from big_nop where origin="LAX"
+
+8) Retrival after partition:
+Select * from big_p where origin="LAX"
+
+9) Delete Partition:
+ALTER TABLE small_p DROP IF EXISTS PARTITION(origin = 'ATL');
+ALTER TABLE small_p DROP IF EXISTS PARTITION(origin = 'LAX');
+ALTER TABLE small_p DROP IF EXISTS PARTITION(origin = 'ORD');
+
+
+
+
+SPARK SQL:
+
+>>>from pyspark.sql import SQLContext
+>>>SqlContext = SQLContext(sc)
+>>>lines = sc.textFile("Downloads/small_spk.txt")
+>> parts = lines.map(lambda l: l.split(","))
+>>>parts.show()
+
+
+# sc is an existing SparkContext.
+from pyspark.sql import HiveContext
+sqlContext = HiveContext(sc)
+
+sqlContext.sql("Create table SMALL_NOP(index smallint,month bigint,dayofmonth tinyint,dayofweek tinyint,deptime smallint,crsdeptime smallint,arrtime smallint,
+crsarrtime smallint,uniquecarrier string,origin string,dest string,distance smallint,diverted bigint,cancelled bigint,carrierdelay bigint,
+weatherdelay bigint,nasdelay tinyint,securitydelay bigint,lateaircraftdelay tinyint,arrdelay tinyint,depdelay tinyint,arrdelay_cat string,
+depdelay_cat string,dest_type string)ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' Stored as textfile")
+
+sqlContext.sql("LOAD DATA LOCAL INPATH 'Downloads/small.txt' INTO TABLE small_nop")
+
+# Queries can be expressed in HiveQL.
+#results = sqlContext.sql("FROM small_nop SELECT key, value").collect()
+results = sqlContext.sql("Select index from small_nop").collect()
+
+
+
+
+
+
+
+
+
+
