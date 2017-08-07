@@ -335,7 +335,7 @@ SPARK SQL:
 
 # sc is an existing SparkContext.
 from pyspark.sql import HiveContext
-sqlContext = HiveContext(sc)
+sqlContext = HiveContext(sc)  // SQLContext(sc) - this is used to implicitly convert an RDD to a DataFrame
 
 sqlContext.sql("Create table SMALL_NOP(index smallint,month bigint,dayofmonth tinyint,dayofweek tinyint,deptime smallint,crsdeptime smallint,arrtime smallint,
 crsarrtime smallint,uniquecarrier string,origin string,dest string,distance smallint,diverted bigint,cancelled bigint,carrierdelay bigint,
